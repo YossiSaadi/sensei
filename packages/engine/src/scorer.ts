@@ -16,6 +16,21 @@ import { LAYER_WEIGHTS, determineBadge } from './types.js';
 // Singleton Ajv instance for JSON Schema validation (Fix #4)
 const ajv = new Ajv({ allErrors: true });
 
+// Fix #8: ReDoS protection constants
+const REGEX_MAX_INPUT_LENGTH = 10_000; // Truncate input to prevent catastrophic backtracking
+
+/**
+ * Safely test a regex against input, catching errors from catastrophic backtracking.
+ * Returns null if the regex errors out.
+ */
+function safeRegexTest(pattern: RegExp, input: string): boolean | null {
+  try {
+    return pattern.test(input);
+  } catch {
+    return null;
+  }
+}
+
 // ─── Automated KPI Scoring ───────────────────────────────────────────
 
 export function scoreAutomatedKPI(
@@ -38,12 +53,26 @@ export function scoreAutomatedKPI(
     }
 
     case 'regex': {
-      const pattern = new RegExp(String(kpi.config.expected ?? ''));
-      const match = pattern.test(agentOutput);
-      rawScore = match ? maxScore : 0;
-      evidence = match
-        ? `Output matches regex /${kpi.config.expected}/`
-        : `Output does not match regex /${kpi.config.expected}/`;
+      const patternStr = String(kpi.config.expected ?? '');
+      try {
+        const pattern = new RegExp(patternStr);
+        // Fix #8: ReDoS protection — run regex with a timeout guard.
+        // We limit the input length and use a try/catch to handle catastrophic backtracking.
+        const truncatedOutput = agentOutput.slice(0, REGEX_MAX_INPUT_LENGTH);
+        const match = safeRegexTest(pattern, truncatedOutput);
+        if (match === null) {
+          rawScore = 0;
+          evidence = `Regex /${patternStr}/ timed out or errored — possible ReDoS pattern`;
+        } else {
+          rawScore = match ? maxScore : 0;
+          evidence = match
+            ? `Output matches regex /${patternStr}/`
+            : `Output does not match regex /${patternStr}/`;
+        }
+      } catch {
+        rawScore = 0;
+        evidence = `Invalid regex pattern: /${patternStr}/`;
+      }
       break;
     }
 
