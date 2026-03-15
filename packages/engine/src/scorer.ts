@@ -171,6 +171,18 @@ export function calculateScenarioScore(kpis: KPIResult[]): number {
 
 // ─── Layer Score Aggregation ─────────────────────────────────────────
 
+/**
+ * Calculate layer scores and overall weighted score from scenario results.
+ *
+ * Fix #3: Missing layers are excluded from the weighted overall calculation.
+ * If a suite only defines execution scenarios (no reasoning/self-improvement),
+ * those missing layers are skipped entirely rather than scoring 0 and dragging
+ * down the maximum possible score. The individual layer scores still report 0
+ * for missing layers, but the overall score only weights layers that have data.
+ *
+ * Example: A suite with only execution scenarios can achieve 100% overall,
+ * not be capped at 50% due to missing layers.
+ */
 export function calculateLayerScores(scenarios: ScenarioResult[]): LayerScores {
   const byLayer = new Map<EvaluationLayer, number[]>();
 
@@ -189,10 +201,26 @@ export function calculateLayerScores(scenarios: ScenarioResult[]): LayerScores {
   const reasoning = avg(byLayer.get('reasoning'));
   const self_improvement = avg(byLayer.get('self-improvement'));
 
-  const overall =
-    execution * LAYER_WEIGHTS['execution'] +
-    reasoning * LAYER_WEIGHTS['reasoning'] +
-    self_improvement * LAYER_WEIGHTS['self-improvement'];
+  // Fix #3: Only weight layers that actually have scenarios.
+  // This prevents missing layers from penalizing the overall score.
+  const layers: [EvaluationLayer, number][] = [
+    ['execution', execution],
+    ['reasoning', reasoning],
+    ['self-improvement', self_improvement],
+  ];
+
+  const presentLayers = layers.filter(([layer]) => byLayer.has(layer));
+  let overall: number;
+
+  if (presentLayers.length === 0) {
+    overall = 0;
+  } else {
+    const totalWeight = presentLayers.reduce((sum, [layer]) => sum + LAYER_WEIGHTS[layer], 0);
+    overall = presentLayers.reduce(
+      (sum, [layer, score]) => sum + score * (LAYER_WEIGHTS[layer] / totalWeight),
+      0,
+    );
+  }
 
   return { overall, execution, reasoning, self_improvement };
 }
