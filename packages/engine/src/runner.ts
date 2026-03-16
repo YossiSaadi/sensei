@@ -152,7 +152,7 @@ export class Runner {
     }
 
     // Send to agent
-    const timeout = this.options.timeout_ms ?? suite.agent.timeout_ms;
+    const timeout = this.options.timeout_ms ?? suite.agent?.timeout_ms;
     const output = await this.adapter.send({
       prompt,
       context: scenario.input.context,

@@ -10,7 +10,7 @@ export interface SuiteDefinition {
   name: string;
   version: string;
   description?: string;
-  agent: AgentConfig;
+  agent?: AgentConfig;
   judge?: JudgeConfig;
   scenarios: ScenarioDefinition[];
   metadata?: Record<string, unknown>;

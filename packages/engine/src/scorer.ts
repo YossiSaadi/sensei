@@ -2,7 +2,8 @@
  * Scorer — calculates KPI scores and aggregates them into layer/overall scores.
  */
 
-import Ajv from 'ajv';
+import _Ajv from 'ajv';
+const Ajv = _Ajv as unknown as typeof _Ajv.default;
 import type {
   KPIDefinition,
   KPIResult,
@@ -93,7 +94,7 @@ export function scoreAutomatedKPI(
           } else {
             rawScore = 0;
             const errors = validate.errors
-              ?.map((e) => `${e.instancePath || '/'}: ${e.message}`)
+              ?.map((e: { instancePath?: string; message?: string }) => `${e.instancePath || '/'}: ${e.message}`)
               .join('; ') ?? 'unknown validation error';
             evidence = `Output is valid JSON but does not conform to schema: ${errors}`;
           }

@@ -89,7 +89,7 @@ export const SuiteDefinitionSchema = z.object({
   name: z.string().min(1),
   version: z.string().min(1),
   description: z.string().optional(),
-  agent: AgentConfigSchema,
+  agent: AgentConfigSchema.optional(),
   judge: JudgeConfigSchema.optional(),
   scenarios: z.array(ScenarioDefinitionSchema).min(1),
   metadata: z.record(z.unknown()).optional(),

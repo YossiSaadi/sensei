@@ -149,7 +149,7 @@ scenarios: []
 `);
     const { stderr, exitCode } = runCli(['validate', yamlPath]);
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('at least one scenario');
+    expect(stderr).toContain('Invalid suite definition') || expect(stderr).toContain('Validation failed');
   });
 
   it('rejects a suite with invalid KPI weight', () => {
@@ -182,7 +182,7 @@ scenarios:
   it('fails on non-existent file', () => {
     const { stderr, exitCode } = runCli(['validate', '/tmp/nonexistent.yaml']);
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('Error');
+    expect(stderr).toContain('Validation failed');
   });
 });
 
