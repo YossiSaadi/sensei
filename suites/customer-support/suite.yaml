@@ -1,0 +1,385 @@
+id: customer-support
+version: "1.0.0"
+name: "Customer Support Agent Qualification"
+description: >
+  Evaluates customer support AI agents across ticket resolution, empathy,
+  de-escalation, multi-issue handling, reasoning about approach, and improvement after feedback.
+
+defaults:
+  timeout_ms: 60000
+  judge_model: "gpt-4o"
+
+scenarios:
+  # ─── Layer 1: Execution ────────────────────────────────────────────
+
+  - id: ticket-resolution
+    name: "Technical Support Ticket Resolution"
+    layer: execution
+    description: "Resolve a customer's technical issue via chat"
+    input:
+      prompt: |
+        You are a customer support agent. A customer has submitted the following ticket:
+
+        ---
+        From: alex.murphy@techstartup.io
+        Subject: Can't export data — stuck on loading screen for 3 days
+
+        Hi, I've been trying to export our Q1 analytics report for 3 days now.
+        Every time I click "Export to CSV" the loading spinner appears and never stops.
+        I've tried Chrome and Firefox. Cleared cache. Nothing works.
+
+        This is URGENT — I have a board meeting tomorrow and I need this data.
+        I'm on your Business plan and I'm seriously considering switching to a competitor
+        if this isn't fixed today.
+
+        Alex Murphy
+        Head of Analytics, TechStartup.io
+        ---
+
+        Write a support response that:
+        1. Acknowledges the urgency and frustration
+        2. Provides a clear troubleshooting path
+        3. Offers an immediate workaround
+        4. Sets expectations for resolution timeline
+    kpis:
+      - id: empathy
+        name: "Empathy & Tone"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Genuinely empathetic, acknowledges frustration without being robotic,
+               validates the urgency of the board meeting, speaks like a human
+            4: Empathetic and professional, acknowledges urgency
+            3: Polite but formulaic empathy ("I understand your frustration...")
+            2: Acknowledges issue but misses emotional context
+            1: Cold, robotic, or dismissive tone
+
+      - id: troubleshooting
+        name: "Troubleshooting Quality"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Clear, prioritized troubleshooting steps specific to the export issue,
+               avoids steps already tried (cache clearing), includes advanced diagnostics
+            4: Good troubleshooting path, mostly avoids redundant steps
+            3: Generic troubleshooting steps, some redundancy with what customer tried
+            2: Vague or incomplete troubleshooting
+            1: No actionable troubleshooting provided
+
+      - id: workaround
+        name: "Immediate Workaround"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Offers a creative, immediately actionable workaround (e.g., API export,
+               different format, manual data pull, offer to export on their behalf)
+            4: Provides a reasonable workaround
+            3: Mentions alternative but unclear how to execute
+            2: Vague suggestion without actionable steps
+            1: No workaround offered despite urgent deadline
+
+      - id: expectations
+        name: "Expectation Setting"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Sets specific timeline, explains escalation path, provides direct
+               contact for follow-up, mentions proactive updates
+            4: Clear timeline with follow-up plan
+            3: Vague timeline ("we'll look into it soon")
+            2: No clear timeline or follow-up plan
+            1: Overpromises or sets no expectations
+
+  - id: angry-customer-deescalation
+    name: "Angry Customer De-escalation"
+    layer: execution
+    description: "Handle an escalated, angry customer threatening to churn"
+    input:
+      prompt: |
+        You are a customer support agent. Handle this escalated conversation:
+
+        ---
+        CUSTOMER (3rd message in thread, increasingly angry):
+
+        This is absolutely unacceptable. I've been a paying customer for 2 YEARS
+        and this is the THIRD time this month my data has been lost. Last time your
+        agent promised it would never happen again, and here we are.
+
+        I've already started evaluating your competitors. My team of 50 is ready
+        to migrate unless you give me a VERY good reason to stay. I want to speak
+        to a manager NOW, and I want compensation for the hours we've lost.
+
+        Don't give me any more scripted apologies. I want ACTION.
+        ---
+
+        Respond to this customer. Your goals:
+        1. De-escalate without being dismissive
+        2. Take ownership of the recurring issue
+        3. Provide concrete next steps
+        4. Address the churn risk appropriately
+    kpis:
+      - id: de-escalation
+        name: "De-escalation Skill"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Masterful de-escalation — validates anger without being defensive,
+               takes personal ownership, shifts from emotional to solution-oriented
+               naturally, doesn't use hollow phrases
+            4: Effective de-escalation with genuine tone
+            3: Attempts de-escalation but sounds scripted
+            2: Acknowledges anger but doesn't effectively calm
+            1: Dismissive, defensive, or escalates further
+
+      - id: ownership
+        name: "Ownership & Accountability"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Takes clear ownership of the pattern (3rd time), acknowledges broken
+               promise from previous agent, doesn't blame the customer or deflect
+            4: Takes ownership of current issue and pattern
+            3: Takes ownership of current issue only
+            2: Partial ownership with some deflection
+            1: Deflects blame or makes excuses
+
+      - id: retention-action
+        name: "Retention & Action Plan"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Concrete action plan — offers manager escalation path, mentions
+               compensation/credit proactively, provides specific prevention plan,
+               addresses the team-of-50 context
+            4: Good action plan with most elements
+            3: Some concrete steps but missing key elements
+            2: Vague promises without specifics
+            1: No concrete plan offered
+
+      - id: no-scripted-tone
+        name: "Authentic (Non-Scripted) Tone"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Response feels human and genuine — no "I understand your frustration"
+               or "We value your business" type phrases. Direct and authentic.
+            4: Mostly authentic with minor scripted phrases
+            3: Mix of authentic and scripted language
+            2: Mostly scripted/corporate tone
+            1: Entirely scripted and impersonal
+
+  - id: multi-issue-ticket
+    name: "Complex Multi-Issue Ticket"
+    layer: execution
+    description: "Handle a ticket with multiple interrelated issues"
+    input:
+      prompt: |
+        You are a customer support agent. Handle this complex ticket:
+
+        ---
+        From: jennifer.walsh@designcorp.com
+        Subject: Multiple issues after your latest update
+
+        Hi Support,
+
+        Since your update last Tuesday, we're experiencing several issues:
+
+        1. Our custom dashboard widgets are showing data from the WRONG time period
+           (showing last month instead of current month)
+        2. Three of our team members got logged out and can't reset their passwords —
+           the reset email never arrives
+        3. Our API integration with Salesforce stopped syncing — getting 401 errors
+        4. The mobile app crashes when opening any report
+
+        We're a team of 200 and this is affecting our entire workflow.
+        Please prioritize these — which ones can you fix right now?
+
+        Jennifer Walsh
+        Director of Operations, DesignCorp
+        ---
+
+        Respond with a clear, organized plan addressing all four issues.
+        Prioritize appropriately and explain your prioritization reasoning.
+    kpis:
+      - id: prioritization
+        name: "Issue Prioritization"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Smart prioritization based on impact/urgency — password lockout and
+               API integration likely highest priority (blocking work), dashboard
+               and mobile app next. Explains reasoning clearly.
+            4: Reasonable prioritization with explanation
+            3: Addresses all issues but no clear priority order
+            2: Random ordering without reasoning
+            1: Misses issues or wrong priorities
+
+      - id: organization
+        name: "Response Organization"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Cleanly organized — numbered/sectioned per issue, each with status,
+               action, and timeline. Easy to scan and reference.
+            4: Well organized with clear structure
+            3: Covers all issues but hard to scan
+            2: Disorganized or wall of text
+            1: Confusing or missing issues
+
+      - id: actionability
+        name: "Actionable Steps Per Issue"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Each issue has a specific immediate action, workaround if applicable,
+               and timeline. Distinguishes what support can fix now vs. engineering escalation.
+            4: Most issues have clear actions
+            3: Some issues have actions, others are vague
+            2: Mostly vague across issues
+            1: No actionable steps
+
+      - id: holistic-view
+        name: "Holistic Problem Understanding"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Connects the dots — recognizes issues are likely related to the update,
+               mentions rollback possibility, addresses team-of-200 scale impact
+            4: Notes update connection and scale
+            3: Treats issues independently
+            2: Misses the update connection
+            1: No systemic awareness
+
+  # ─── Layer 2: Reasoning ────────────────────────────────────────────
+
+  - id: explain-deescalation-approach
+    name: "De-escalation Strategy Reasoning"
+    layer: reasoning
+    depends_on: angry-customer-deescalation
+    description: "Explain the reasoning behind the de-escalation approach"
+    input:
+      prompt: |
+        Explain your reasoning behind how you handled the angry customer:
+        1. What psychological principles guided your de-escalation approach?
+        2. Why did you choose that specific tone and language?
+        3. How did you balance empathy with action-orientation?
+        4. What signals in the customer's message influenced your strategy?
+        5. What would you do differently if the customer responds still angry?
+    kpis:
+      - id: reasoning-depth
+        name: "Reasoning Depth"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: References specific de-escalation principles (mirroring, validation
+               before solution, emotional labor concepts), connects approach to
+               customer signals (2-year loyalty, team size, broken promise pattern)
+            4: Solid reasoning with specific references to approach
+            3: General reasoning without deep insight
+            2: Surface-level explanations
+            1: Cannot articulate reasoning
+
+      - id: adaptability
+        name: "Adaptability Awareness"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Thoughtful contingency plan — describes how approach would shift
+               if de-escalation fails, shows awareness of escalation paths,
+               discusses when to involve management genuinely
+            4: Good contingency thinking
+            3: Basic "escalate to manager" response
+            2: No real contingency plan
+            1: Rigid thinking, no adaptability
+
+  # ─── Layer 3: Self-Improvement ─────────────────────────────────────
+
+  - id: improve-ticket-response
+    name: "Improve Support Response After Feedback"
+    layer: self-improvement
+    depends_on: ticket-resolution
+    description: "Revise the support response based on specific feedback"
+    input:
+      prompt: |
+        Here is feedback on your support response. Revise it:
+
+        1. Your response was too long — customers in crisis want quick answers.
+           Cut it to under 150 words.
+        2. You repeated a troubleshooting step the customer already tried (cache clearing).
+        3. The workaround was buried in paragraph 3 — lead with the workaround
+           since the customer has a deadline tomorrow.
+        4. Add a direct phone number or calendar link for immediate follow-up.
+      feedback: |
+        Too long. Repeated customer's steps. Workaround buried. No direct contact offered.
+    kpis:
+      - id: feedback-applied
+        name: "Feedback Incorporation"
+        weight: 0.40
+        method: comparative-judge
+        config:
+          comparison_type: improvement
+          max_score: 5
+          rubric: |
+            5: All 4 feedback points addressed — shorter response, no repeated steps,
+               workaround leads, direct contact provided
+            4: 3/4 points addressed well
+            3: 2/4 points addressed
+            2: 1/4 points addressed
+            1: Feedback mostly ignored
+
+      - id: quality-kept
+        name: "Quality Preservation"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: consistency
+          max_score: 5
+          rubric: |
+            5: Empathy and professionalism fully maintained while being more concise
+            4: Mostly maintained with minor losses
+            3: Some quality lost in trimming
+            2: Significantly less empathetic or helpful
+            1: Worse overall
+
+      - id: crisis-adaptation
+        name: "Crisis-Oriented Adaptation"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: adaptation
+          max_score: 5
+          rubric: |
+            5: Response now reads like a crisis response — urgency-matched,
+               action-first structure, shows understanding of WHY the feedback matters
+            4: Good adaptation to urgency
+            3: Somewhat improved structure
+            2: Minor changes only
+            1: Doesn't reflect crisis awareness

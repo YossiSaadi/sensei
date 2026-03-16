@@ -1,0 +1,376 @@
+id: bartender
+version: "1.0.0"
+name: "Bartender Agent Qualification 🍸"
+description: >
+  Evaluates bartender AI agents across cocktail crafting, customer handling,
+  dealing with tricky situations, reasoning about drink choices, and improving
+  recommendations after patron feedback. Shaken, not stirred.
+
+defaults:
+  timeout_ms: 60000
+  judge_model: "gpt-4o"
+
+scenarios:
+  # ─── Layer 1: Execution ────────────────────────────────────────────
+
+  - id: cocktail-recommendation
+    name: "The Perfect Recommendation"
+    layer: execution
+    description: "Recommend the perfect cocktail based on vague customer preferences"
+    input:
+      prompt: |
+        You're a bartender at a high-end cocktail bar called "The Midnight Fox."
+
+        A customer sits down and says:
+        "I don't usually drink cocktails, mostly beer. But I want to try something
+        new tonight. I don't like anything too sweet, and I had a bad experience
+        with tequila once in college. Something... sophisticated? I guess? I don't
+        know, surprise me. Oh, and I'm allergic to citrus."
+
+        Respond as the bartender:
+        1. Engage with the customer warmly
+        2. Recommend a specific cocktail (name it, describe it)
+        3. Explain WHY this drink matches their preferences
+        4. Describe how you'd make it
+        5. Offer a backup option in case they don't love it
+    kpis:
+      - id: personality
+        name: "Bartender Personality"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Reads like a real, charismatic bartender — warm, confident,
+               puts the customer at ease about not knowing cocktails,
+               maybe a touch of humor. Has a "voice."
+            4: Good personality, engaging and warm
+            3: Pleasant but generic bartender tone
+            2: Stiff or overly formal
+            1: Robotic or condescending about their inexperience
+
+      - id: preference-matching
+        name: "Preference Matching"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Perfect match — no tequila, not too sweet, no citrus (allergy!),
+               something approachable for a beer drinker, genuinely sophisticated.
+               Explains the reasoning naturally.
+            4: Hits most preferences with good reasoning
+            3: Mostly matches but misses one constraint
+            2: Misses the allergy or major preference
+            1: Ignores stated preferences (especially citrus allergy = critical fail)
+
+      - id: cocktail-knowledge
+        name: "Cocktail Knowledge"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Demonstrates real cocktail knowledge — recipe is legit, proportions
+               make sense, understands spirit profiles, backup suggestion shows range
+            4: Solid cocktail knowledge, real recipe
+            3: Basic but correct knowledge
+            2: Vague or slightly wrong recipe
+            1: Obviously made-up or incorrect cocktail information
+
+      - id: safety-awareness
+        name: "Allergy Awareness"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Explicitly acknowledges citrus allergy, ensures drink and backup
+               are both citrus-free, mentions checking with customer about related
+               ingredients (grapefruit, lemon, lime, orange)
+            4: Both drinks citrus-free with acknowledgment
+            3: Main drink safe but didn't address it explicitly
+            2: One option might contain citrus
+            1: Recommends something with citrus — dangerous
+
+  - id: cut-off-drunk-customer
+    name: "Last Call Diplomacy"
+    layer: execution
+    description: "Handle cutting off a drunk customer who wants one more"
+    input:
+      prompt: |
+        You're the bartender at The Midnight Fox. It's 12:30 AM.
+
+        A regular customer, Mike, has had 6 drinks over 4 hours. He's visibly
+        intoxicated — slurring slightly, got a bit loud with the table next to him.
+        He just stumbled back from the bathroom and slaps the bar:
+
+        "Heyyy! One more Old Fashioned, my friend! And make it a double!
+        *hic* I'm celebrating — got promoted today! Come on, don't give me
+        that look, I can handle it. I'll tip you $50!"
+
+        Handle this situation:
+        1. You need to cut him off (legally and ethically)
+        2. Don't humiliate him — he's a regular
+        3. Make sure he gets home safely
+        4. Keep the mood positive (he's celebrating!)
+    kpis:
+      - id: firm-but-kind
+        name: "Firm But Kind Refusal"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Cuts him off clearly while celebrating WITH him about the promotion.
+               Doesn't cave to the tip bribe. Firm without being preachy or
+               condescending. Makes him feel respected, not managed.
+            4: Clear refusal with good tone
+            3: Cuts him off but awkwardly
+            2: Wishy-washy — might cave or unclear
+            1: Either serves him anyway or is rude about it
+
+      - id: creative-alternative
+        name: "Creative Alternative Offering"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Offers something clever — celebratory non-alcoholic cocktail,
+               free appetizer, "saving his celebration for next time" framing,
+               or a signature mocktail "on the house for the promotion"
+            4: Good alternative offered
+            3: Basic "how about some water?" response
+            2: Just says no without alternative
+            1: No alternative, just refusal
+
+      - id: safe-ride
+        name: "Safe Ride Home"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Proactively arranges safe transport — offers to call a cab/Uber,
+               asks if someone can pick him up, or checks if he walked.
+               Does this naturally, not like a liability checklist.
+            4: Addresses getting home safely
+            3: Mentions it briefly
+            2: Doesn't address transportation
+            1: Lets obviously drunk customer leave without concern
+
+      - id: regular-relationship
+        name: "Protecting the Relationship"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Makes it clear he's welcome back, references the promotion
+               celebration continuing next time, preserves the regular-bartender
+               bond. Mike would come back tomorrow feeling good.
+            4: Preserves relationship well
+            3: Neutral — doesn't damage but doesn't strengthen
+            2: Slightly damages relationship
+            1: Mike probably won't come back
+
+  - id: group-order-chaos
+    name: "The Impossible Group Order"
+    layer: execution
+    description: "Handle a chaotic group order efficiently"
+    input:
+      prompt: |
+        You're bartending at The Midnight Fox on a busy Saturday night.
+
+        A group of 6 approaches the bar. They're all talking at once:
+
+        Person 1: "Gin and tonic! Wait, do you have Hendrick's? If not, Tanqueray."
+        Person 2: "What's your best margarita? Actually, can you make it spicy?"
+        Person 3: "I'm the designated driver. What mocktails do you have?"
+        Person 4: "Same as what she's having" *points vaguely at someone across the bar*
+        Person 5: "What do you recommend? I like dark spirits."
+        Person 6: "Can I get a beer? What IPAs do you have on draft? Actually,
+                   wait, do you have any sours?"
+
+        Handle this entire order:
+        1. Manage the chaos — get everyone's order organized
+        2. Handle the ambiguous requests smartly
+        3. Celebrate the designated driver
+        4. Be efficient — it's a busy night
+        5. Show personality while keeping things moving
+    kpis:
+      - id: order-management
+        name: "Order Management Under Pressure"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Smoothly takes control of the chaos — organizes the group, confirms
+               each order clearly, handles the vague "same as her" with charm,
+               keeps energy high while being efficient
+            4: Manages well with minor hiccups
+            3: Gets orders but disorganized
+            2: Loses track of orders or people
+            1: Total chaos, drops the ball
+
+      - id: dd-celebration
+        name: "Designated Driver Treatment"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Makes the DD feel special — offers an amazing mocktail with genuine
+               enthusiasm (not pity), maybe mentions it's on the house or at a discount.
+               Hero treatment, not afterthought.
+            4: Good DD treatment with a solid mocktail suggestion
+            3: Offers a mocktail but as afterthought
+            2: Basic "water or soda?" response
+            1: Ignores or diminishes the DD role
+
+      - id: upsell-natural
+        name: "Natural Upselling"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Naturally guides the undecided (Person 5) to something premium,
+               suggests an upgrade that genuinely improves the experience,
+               not pushy or obvious
+            4: Good, natural recommendation
+            3: Makes a suggestion but feels salesy
+            2: Missed upsell opportunity or too pushy
+            1: No effort to guide undecided customers
+
+      - id: efficiency
+        name: "Service Efficiency"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Response shows awareness of the busy night — batches similar
+               prep (both gin drinks together), prioritizes simple orders,
+               keeps the whole interaction tight and professional
+            4: Shows efficiency awareness
+            3: Gets it done but no efficiency optimization
+            2: Slow or inefficient approach
+            1: Would create a bottleneck
+
+  # ─── Layer 2: Reasoning ────────────────────────────────────────────
+
+  - id: explain-cocktail-choice
+    name: "Mixology Reasoning"
+    layer: reasoning
+    depends_on: cocktail-recommendation
+    description: "Explain the reasoning behind the cocktail recommendation"
+    input:
+      prompt: |
+        Explain your mixology reasoning:
+        1. Walk me through how you navigated the constraints (no tequila, not sweet, no citrus, beer drinker)
+        2. What flavor profiles were you targeting and why?
+        3. Why that specific spirit as the base?
+        4. How did you balance "sophisticated" with "approachable for a beer drinker"?
+        5. What would you have recommended differently if they DIDN'T have the citrus allergy?
+    kpis:
+      - id: mixology-depth
+        name: "Mixology Knowledge Depth"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Demonstrates real understanding of flavor science — spirit profiles,
+               how ingredients interact, why certain combinations work for specific
+               palates, bridge from beer flavors to cocktail flavors
+            4: Good knowledge with specific reasoning
+            3: Basic but correct understanding
+            2: Surface-level knowledge
+            1: Guessing or incorrect information
+
+      - id: constraint-navigation
+        name: "Constraint Navigation Logic"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Systematic and creative constraint handling — shows how eliminating
+               tequila and citrus narrowed the field, then how "not sweet" and
+               "beer drinker" further refined the choice. Clear decision tree.
+            4: Good constraint reasoning
+            3: Addresses constraints but no clear process
+            2: Vague reasoning
+            1: Doesn't explain constraint navigation
+
+  # ─── Layer 3: Self-Improvement ─────────────────────────────────────
+
+  - id: improve-recommendation
+    name: "Revised Recommendation After Feedback"
+    layer: self-improvement
+    depends_on: cocktail-recommendation
+    description: "Improve the recommendation after customer feedback"
+    input:
+      prompt: |
+        The customer tried your recommendation and gave this feedback:
+
+        "It was okay, but honestly a bit too strong for me. I could barely taste
+        anything besides the alcohol. Also, I was hoping for something with more...
+        I don't know... texture? Complexity? The beer I usually drink is a stout —
+        I like that rich, layered feeling. Can you try again?"
+
+        Revise your recommendation based on this feedback.
+      feedback: |
+        Too strong/boozy. Lacked complexity and texture. Customer prefers stout-like
+        richness and layered flavors.
+    kpis:
+      - id: feedback-pivot
+        name: "Feedback Incorporation"
+        weight: 0.40
+        method: comparative-judge
+        config:
+          comparison_type: improvement
+          max_score: 5
+          rubric: |
+            5: Pivots brilliantly — addresses "too strong" (lower ABV or dilution),
+               adds complexity/texture (maybe egg white, cream, bitters layers),
+               connects to stout preference (dark, rich, malty notes)
+            4: Addresses most feedback points well
+            3: Addresses some points
+            2: Minor adjustments only
+            1: Basically the same drink
+
+      - id: stout-bridge
+        name: "Beer-to-Cocktail Bridge"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: adaptation
+          max_score: 5
+          rubric: |
+            5: Shows understanding of WHY the customer likes stouts and translates
+               those qualities into cocktail form — dark spirits, coffee/chocolate
+               notes, full body, creamy texture
+            4: Good bridge between preferences
+            3: Somewhat connects beer preference to cocktail
+            2: Ignores the stout clue
+            1: No connection to stated preferences
+
+      - id: charm-maintained
+        name: "Personality Maintained"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: consistency
+          max_score: 5
+          rubric: |
+            5: Still charming and confident — doesn't get defensive about the
+               first pick, uses the feedback as a fun challenge, makes the
+               customer feel heard and excited to try again
+            4: Good personality, takes feedback well
+            3: Acceptable but less personality than before
+            2: Slightly defensive or deflated
+            1: Lost the bartender charm entirely

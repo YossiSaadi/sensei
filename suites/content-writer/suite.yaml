@@ -1,0 +1,342 @@
+id: content-writer
+version: "1.0.0"
+name: "Content Writer Agent Qualification"
+description: >
+  Evaluates content writer AI agents across blog writing, social media copy,
+  SEO optimization, strategic reasoning about content decisions, and improvement after editorial feedback.
+
+defaults:
+  timeout_ms: 60000
+  judge_model: "gpt-4o"
+
+scenarios:
+  # ─── Layer 1: Execution ────────────────────────────────────────────
+
+  - id: blog-post-intro
+    name: "Blog Post Introduction"
+    layer: execution
+    description: "Write a compelling blog post introduction on a technical topic"
+    input:
+      prompt: |
+        Write the introduction (first 200-300 words) for a blog post titled:
+        "Why Your CI/CD Pipeline is Lying to You — And How to Fix It"
+
+        Target audience: Engineering managers and DevOps leads at mid-size companies (100-500 employees).
+
+        The intro should:
+        1. Hook the reader with a relatable pain point
+        2. Establish credibility without being preachy
+        3. Preview the value they'll get from reading
+        4. Set a confident, slightly provocative tone (not clickbait)
+        5. End with a transition to the first section
+    kpis:
+      - id: hook-quality
+        name: "Hook & Opening"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Irresistible hook — opens with a specific, relatable scenario that
+               makes engineering managers think "this is about us." Not generic,
+               not clickbait, genuinely compelling.
+            4: Strong hook with good specificity
+            3: Decent hook but somewhat generic
+            2: Weak opening that doesn't grab attention
+            1: Boring, generic, or off-putting opening
+
+      - id: audience-fit
+        name: "Audience Targeting"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Clearly written for eng managers — uses their language, references
+               their daily reality (board meetings, team scaling, velocity metrics),
+               appropriate technical depth
+            4: Good audience targeting with some specifics
+            3: Broadly tech audience but not specifically eng managers
+            2: Vague audience targeting
+            1: Wrong audience entirely
+
+      - id: tone-voice
+        name: "Tone & Voice"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Confident, slightly provocative, conversational — reads like a smart
+               peer sharing insight, not a vendor selling or a professor lecturing
+            4: Good tone, mostly conversational
+            3: Acceptable but somewhat bland or corporate
+            2: Too salesy, too academic, or too casual
+            1: Tone mismatch for the topic and audience
+
+      - id: word-count
+        name: "Length Target"
+        weight: 0.20
+        method: automated
+        config:
+          type: word-count
+          expected: { min: 180, max: 320 }
+          tolerance: 20
+
+  - id: social-media-thread
+    name: "LinkedIn Thought Leadership Thread"
+    layer: execution
+    description: "Write a LinkedIn post that drives engagement"
+    input:
+      prompt: |
+        Write a LinkedIn post (max 300 words) sharing a contrarian take on AI in the workplace.
+
+        Your thesis: "The companies firing people to replace them with AI will lose to
+        the companies using AI to make their people 10x more effective."
+
+        The post should:
+        1. Open with a bold, scroll-stopping first line
+        2. Build a compelling argument in 3-4 short paragraphs
+        3. Include at least one concrete example
+        4. End with a question or CTA that drives comments
+        5. Use appropriate LinkedIn formatting (short paragraphs, line breaks)
+    kpis:
+      - id: scroll-stop
+        name: "Scroll-Stopping Power"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: First line makes you stop scrolling — bold, specific, counterintuitive.
+               Would stand out in a LinkedIn feed full of noise.
+            4: Strong first line that catches attention
+            3: Decent opening but not exceptional
+            2: Generic LinkedIn opening
+            1: Boring or cliché opening ("I've been thinking about...")
+
+      - id: argument-structure
+        name: "Argument Construction"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Tight, logical argument — each paragraph builds on the last,
+               includes evidence or concrete example, avoids platitudes
+            4: Good argument with supporting points
+            3: Reasonable argument but somewhat generic
+            2: Weak argument or just opinions without support
+            1: No coherent argument
+
+      - id: engagement-driver
+        name: "Engagement CTA"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Closing question/CTA that people genuinely want to answer —
+               specific enough to spark real discussion, not generic "thoughts?"
+            4: Good CTA that would drive some comments
+            3: Generic "What do you think?" style ending
+            2: Weak or missing CTA
+            1: No engagement driver
+
+      - id: linkedin-format
+        name: "Platform-Native Formatting"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Perfect LinkedIn native format — short paragraphs, strategic line
+               breaks, no walls of text, emoji used sparingly if at all, reads
+               naturally on mobile
+            4: Good formatting, mostly platform-native
+            3: Acceptable but not optimized for LinkedIn
+            2: Wall of text or poor formatting
+            1: Clearly not written for LinkedIn
+
+  - id: product-launch-announcement
+    name: "Product Launch Announcement"
+    layer: execution
+    description: "Write a product launch email for a B2B SaaS company"
+    input:
+      prompt: |
+        Write a product launch announcement email for the following:
+
+        Product: "FlowState" — a new AI-powered focus mode for project management tools
+        Company: TaskForge (B2B project management SaaS, 5000 customers)
+        Key features:
+        - AI analyzes your calendar, tasks, and communication patterns
+        - Automatically blocks focus time and batches notifications
+        - Suggests optimal times for deep work based on your team's rhythm
+        - Integrates with Slack, Calendar, and Jira
+
+        Target: Existing customers (product managers and team leads)
+        Goal: Drive feature adoption — get them to enable FlowState this week
+
+        Write the full email including subject line. Keep it under 250 words.
+    kpis:
+      - id: subject-line
+        name: "Email Subject Line"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Subject line that existing customers would open — specific benefit,
+               curiosity-driving, not spammy, under 60 chars
+            4: Good subject line with clear value
+            3: Acceptable but generic
+            2: Weak or misleading subject
+            1: Spammy or irrelevant
+
+      - id: benefit-clarity
+        name: "Benefit-First Messaging"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Leads with the benefit (more focus time, fewer interruptions),
+               not the feature list. Features support benefits, not the other way around.
+            4: Mostly benefit-led with some feature focus
+            3: Mix of benefits and features
+            2: Feature-focused with benefits as afterthought
+            1: Pure feature dump
+
+      - id: cta-conversion
+        name: "Conversion-Oriented CTA"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Single, clear, low-friction CTA (e.g., "Enable FlowState in 2 clicks").
+               Creates urgency without being pushy. Addresses "why this week?"
+            4: Clear CTA with some urgency
+            3: CTA present but generic
+            2: Multiple competing CTAs or unclear action
+            1: No clear CTA
+
+      - id: email-brevity
+        name: "Conciseness"
+        weight: 0.25
+        method: automated
+        config:
+          type: word-count
+          expected: { min: 120, max: 260 }
+          tolerance: 15
+
+  # ─── Layer 2: Reasoning ────────────────────────────────────────────
+
+  - id: explain-blog-choices
+    name: "Content Strategy Reasoning"
+    layer: reasoning
+    depends_on: blog-post-intro
+    description: "Explain the strategic decisions behind the blog intro"
+    input:
+      prompt: |
+        Explain your content strategy reasoning:
+        1. Why did you choose that specific hook? What reader psychology are you targeting?
+        2. How did you calibrate the technical depth for engineering managers?
+        3. What tone choices did you make and why?
+        4. How does this intro set up the rest of the article?
+        5. What would you change if the target audience were developers instead of managers?
+    kpis:
+      - id: content-strategy-depth
+        name: "Content Strategy Depth"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Demonstrates understanding of content marketing strategy — references
+               reader psychology, content funnel positioning, audience segmentation,
+               SEO considerations, and engagement mechanics
+            4: Good strategic reasoning with specifics
+            3: General content knowledge without deep strategy
+            2: Surface-level explanations
+            1: Cannot articulate strategy
+
+      - id: audience-adaptation
+        name: "Audience Adaptation Awareness"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Articulates specific differences between writing for managers vs.
+               developers — tone, technical depth, pain points, vocabulary, examples
+            4: Good understanding of audience differences
+            3: Basic awareness of audience needs
+            2: Vague understanding
+            1: No meaningful differentiation
+
+  # ─── Layer 3: Self-Improvement ─────────────────────────────────────
+
+  - id: improve-blog-intro
+    name: "Revise Blog Intro After Editorial Feedback"
+    layer: self-improvement
+    depends_on: blog-post-intro
+    description: "Revise the blog intro based on editorial feedback"
+    input:
+      prompt: |
+        Your editor gave the following feedback on the blog intro. Revise it:
+
+        1. The opening is too abstract — start with a specific story or data point,
+           not a general statement about CI/CD
+        2. You buried the "aha moment" — the key insight should hit in the first
+           50 words, not paragraph 3
+        3. The tone is a bit too aggressive — dial it back from "provocative" to
+           "confidently helpful" — we want to earn trust, not alienate
+        4. Add a one-line preview of what the reader will learn (the "promise")
+      feedback: |
+        Too abstract opening. Key insight buried. Tone too aggressive. Missing content promise.
+    kpis:
+      - id: editorial-feedback-applied
+        name: "Editorial Feedback Incorporation"
+        weight: 0.40
+        method: comparative-judge
+        config:
+          comparison_type: improvement
+          max_score: 5
+          rubric: |
+            5: All 4 points addressed — specific opening, insight up front,
+               softer tone, clear promise
+            4: 3/4 points addressed well
+            3: 2/4 points addressed
+            2: 1/4 points addressed
+            1: Feedback largely ignored
+
+      - id: voice-preserved
+        name: "Voice Preservation"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: consistency
+          max_score: 5
+          rubric: |
+            5: Core voice and quality maintained — still engaging and smart,
+               just more refined
+            4: Mostly preserved
+            3: Some voice lost
+            2: Feels like different writer
+            1: Completely different voice
+
+      - id: editorial-maturity
+        name: "Editorial Maturity"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: adaptation
+          max_score: 5
+          rubric: |
+            5: Shows understanding of WHY the editor's feedback matters —
+               changes go beyond literal compliance to genuinely improve the piece
+            4: Good editorial judgment
+            3: Literal compliance only
+            2: Mechanical changes
+            1: Doesn't understand feedback intent

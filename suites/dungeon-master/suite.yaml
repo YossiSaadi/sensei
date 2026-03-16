@@ -1,0 +1,398 @@
+id: dungeon-master
+version: "1.0.0"
+name: "Dungeon Master Agent Qualification 🎲"
+description: >
+  Evaluates dungeon master AI agents across narrative creation, encounter management,
+  player interaction, strategic reasoning about world-building, and adapting after
+  player feedback. Roll for initiative.
+
+defaults:
+  timeout_ms: 60000
+  judge_model: "gpt-4o"
+
+scenarios:
+  # ─── Layer 1: Execution ────────────────────────────────────────────
+
+  - id: opening-scene
+    name: "The Tavern Scene"
+    layer: execution
+    description: "Set the opening scene for a new campaign"
+    input:
+      prompt: |
+        You are a Dungeon Master starting a new campaign session. Your party consists of:
+
+        - Thornwick: A grumpy dwarf paladin who claims he's "retired from adventuring"
+          but keeps showing up (played by a first-time D&D player)
+        - Zephyr: A chaotic neutral tiefling bard who solves every problem with music
+          or flirting (played by an experienced, chaotic player)
+        - Silent River: A mysterious elf ranger who has spoken exactly 4 words in
+          the last 3 sessions (played by a shy player who's starting to open up)
+
+        Set the opening scene at the "Rusty Cauldron" tavern. The party has been
+        hired by a nervous innkeeper who claims something is stealing food from his
+        cellar every night. But when they arrive, they discover the tavern is hosting
+        a baking competition today, and the innkeeper forgot to mention it.
+
+        Create the scene:
+        1. Vivid description of the tavern and atmosphere
+        2. The innkeeper's panicked introduction
+        3. A hook for EACH player character that matches their personality
+        4. At least one unexpected detail that creates interesting choices
+        5. End at a moment of decision
+    kpis:
+      - id: scene-craft
+        name: "Scene Description & Atmosphere"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Vivid, sensory scene-setting — sights, sounds, smells. The tavern
+               feels alive. Baking competition creates delightful chaos. Tone
+               balances humor and mystery perfectly.
+            4: Good scene with strong atmosphere
+            3: Adequate description, somewhat generic fantasy tavern
+            2: Bare-bones description
+            1: Boring or nonsensical setting
+
+      - id: character-hooks
+        name: "Character-Specific Hooks"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Each character gets a personalized hook that plays to their personality:
+               Thornwick gets pulled into something despite being "retired,"
+               Zephyr gets an irresistible social opportunity,
+               Silent River gets a subtle detail only they'd notice.
+               Accounts for player experience levels.
+            4: Good hooks for most characters
+            3: Some personalization but mostly generic
+            2: One-size-fits-all adventure hook
+            1: Ignores character personalities
+
+      - id: player-awareness
+        name: "Player (Not Just Character) Awareness"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Shows awareness of the PLAYERS behind the characters — gives the
+               first-timer clear choices, gives the chaotic player room to be
+               chaotic without derailing, gives the shy player a gentle spotlight
+               moment that doesn't force them to talk too much
+            4: Good player awareness for most
+            3: Some player awareness
+            2: Treats all players the same
+            1: No player awareness
+
+      - id: decision-point
+        name: "Meaningful Decision Point"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Ends at a compelling fork — players have at least 2-3 interesting
+               choices, none obviously "right," each with clear consequences.
+               The baking competition and cellar mystery create conflicting priorities.
+            4: Good decision point with clear options
+            3: Decision point exists but one option is clearly better
+            2: Weak or forced decision
+            1: No real player choice offered
+
+  - id: combat-encounter
+    name: "The Cellar Showdown"
+    layer: execution
+    description: "Run a creative combat encounter"
+    input:
+      prompt: |
+        The party has descended into the tavern cellar. They discover the food thief
+        is actually a family of 3 awakened raccoons (INT 10, can speak Common) who
+        escaped from a wizard's laboratory. The mama raccoon is wearing a tiny wizard
+        hat and the two baby raccoons are hoarding cheese wheels like dragons hoarding gold.
+
+        When the party enters, mama raccoon hisses and casts Minor Illusion to make
+        herself look like a terrifying bear. The babies scatter.
+
+        The party is level 3. This encounter should NOT be a simple fight.
+
+        Run this encounter:
+        1. Describe the scene with vivid detail
+        2. Present the encounter in a way that allows for combat, diplomacy, or creativity
+        3. Include at least one environmental element players can use
+        4. Make the babies' behavior endearing enough to make combat feel morally complex
+        5. Include a surprise twist or hidden detail
+    kpis:
+      - id: encounter-creativity
+        name: "Encounter Creativity"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Brilliantly creative — the encounter is memorable, multi-dimensional,
+               and avoids the "kill everything" trope. Environmental elements are
+               clever and interactable. The twist adds depth.
+            4: Creative encounter with good elements
+            3: Decent encounter but somewhat predictable
+            2: Standard "roll initiative" combat
+            1: Boring or nonsensical encounter
+
+      - id: moral-complexity
+        name: "Moral Complexity"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Players genuinely face a moral dilemma — fighting talking raccoon
+               babies who just want cheese feels WRONG, but they're causing real
+               harm to the innkeeper. Multiple resolution paths with different
+               consequences and tradeoffs.
+            4: Good moral complexity
+            3: Some moral nuance
+            2: Black and white situation
+            1: No moral dimension
+
+      - id: multiple-paths
+        name: "Multiple Resolution Paths"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: At least 3 viable approaches — combat, negotiation, creative (lure
+               with food, find the wizard, adopt them). Each path has logical
+               consequences and none feels "wrong."
+            4: 2-3 clear paths
+            3: Combat plus one alternative
+            2: Basically just combat
+            1: Only one possible resolution
+
+      - id: humor-balance
+        name: "Humor-Drama Balance"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Perfectly balances the inherent humor (raccoons in wizard hats,
+               cheese hoard) with genuine stakes and emotional beats. Funny
+               without being a joke.
+            4: Good balance, mostly lands
+            3: Too silly or too serious
+            2: Tone is inconsistent
+            1: Either pure comedy or ignores the humor entirely
+
+  - id: player-curveball
+    name: "The Chaotic Player Moment"
+    layer: execution
+    description: "Handle a player doing something completely unexpected"
+    input:
+      prompt: |
+        Mid-session, Zephyr's player (the chaotic bard) interrupts and announces:
+
+        "I want to enter the baking competition. I use Prestidigitation to
+        flavor my entry, Thaumaturgy to make dramatic sound effects during
+        my presentation, and I seduce the head judge. I rolled a natural 20
+        on Performance."
+
+        Meanwhile, Silent River's player whispers: "While everyone's distracted
+        by Zephyr, I want to sneak into the back room the innkeeper keeps locked."
+
+        And Thornwick's player says: "I'm retired. I sit down and eat someone
+        else's competition entry."
+
+        Handle ALL THREE simultaneously:
+        1. Reward Zephyr's creativity without breaking the game
+        2. Give Silent River their stealth spotlight
+        3. Make Thornwick's "I'm retired" bit funny AND plot-relevant
+        4. Keep the main quest moving forward
+        5. Connect at least two of these threads
+    kpis:
+      - id: chaos-management
+        name: "Chaos Management"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Brilliant chaos management — all three actions happen simultaneously,
+               each gets meaningful screen time, none overshadows the others,
+               the threads connect in a satisfying way
+            4: Handles most threads well
+            3: Addresses all but some feel rushed
+            2: Drops a thread or heavily favors one player
+            1: Loses control of the situation
+
+      - id: reward-creativity
+        name: "Rewarding Player Creativity"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Says "yes, and" to all creative choices — Zephyr's baking entry
+               has consequences (good or chaotic), Silent River finds something
+               interesting, Thornwick's eating has an unexpected result.
+               The nat 20 feels epic but not game-breaking.
+            4: Good "yes, and" energy
+            3: Allows but doesn't enhance creativity
+            2: Blocks some creative attempts
+            1: "No, you can't do that" energy
+
+      - id: spotlight-sharing
+        name: "Spotlight Equity"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Each player gets their moment — importantly, Silent River (the shy
+               player) gets a meaningful stealth scene that might reveal something
+               cool, not just "you succeed, moving on"
+            4: Good spotlight distribution
+            3: One player dominates
+            2: Two players marginalized
+            1: Focuses entirely on one player
+
+      - id: quest-progress
+        name: "Quest Advancement"
+        weight: 0.20
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: All this chaos somehow advances the main plot — maybe Silent River
+               finds a clue, maybe Thornwick eats something plot-relevant,
+               maybe the baking competition reveals something about the thefts.
+               Masterful threading.
+            4: Good plot advancement through chaos
+            3: Some plot movement
+            2: Plot stalls during player shenanigans
+            1: Quest completely forgotten
+
+  # ─── Layer 2: Reasoning ────────────────────────────────────────────
+
+  - id: explain-dm-philosophy
+    name: "DM Philosophy & World-Building Reasoning"
+    layer: reasoning
+    depends_on: opening-scene
+    description: "Explain the reasoning behind DM choices"
+    input:
+      prompt: |
+        Explain your DM philosophy and reasoning:
+        1. How did you decide what atmosphere and tone to set?
+        2. Why did you create those specific hooks for each character?
+        3. How do you balance player agency with narrative structure?
+        4. How did you account for different player experience levels?
+        5. What would you do if a player ignored all your hooks and did something random?
+    kpis:
+      - id: dm-philosophy
+        name: "DM Philosophy Depth"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Articulates a thoughtful DM philosophy — references concepts like
+               collaborative storytelling, "yes and" improv, player types (Bartle
+               types or similar), session zero principles, safety tools.
+               Shows the kind of DM who's read about the craft.
+            4: Good DM philosophy with specific principles
+            3: Basic but correct DM understanding
+            2: Surface-level thoughts on DMing
+            1: Doesn't understand collaborative storytelling
+
+      - id: player-empathy
+        name: "Player Empathy & Inclusion"
+        weight: 0.50
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Shows deep understanding of different player needs — how to engage
+               the shy player without pressuring, how to channel chaotic energy
+               productively, how to make the new player feel included.
+               Discusses real table dynamics, not just game mechanics.
+            4: Good player empathy
+            3: Basic awareness of player differences
+            2: Focuses on mechanics over people
+            1: No player empathy
+
+  # ─── Layer 3: Self-Improvement ─────────────────────────────────────
+
+  - id: improve-scene-after-feedback
+    name: "Revised Scene After Player Feedback"
+    layer: self-improvement
+    depends_on: opening-scene
+    description: "Improve the opening scene based on player feedback"
+    input:
+      prompt: |
+        After the session, your players gave feedback:
+
+        1. Thornwick's player (the newbie): "I didn't really understand what my
+           choices were. Everyone else seemed to know what to do but I just sat
+           there confused. Can you make things clearer for me?"
+
+        2. Zephyr's player: "The scene was fun but felt a bit railroady — I wanted
+           to explore the baking competition more but felt pushed toward the cellar."
+
+        3. Silent River's player: "I loved the detail about [the thing only I noticed]
+           but I wished I had more time before Zephyr took over the scene."
+
+        Rewrite the opening scene addressing this feedback. Keep what worked,
+        fix what didn't.
+      feedback: |
+        Newbie confused by choices. Scene felt railroady. Shy player's spotlight got overshadowed.
+    kpis:
+      - id: feedback-applied
+        name: "Player Feedback Incorporation"
+        weight: 0.40
+        method: comparative-judge
+        config:
+          comparison_type: improvement
+          max_score: 5
+          rubric: |
+            5: All three feedback points addressed — clearer choices for newbie
+               (maybe explicit "you could X, Y, or Z"), more open exploration,
+               protected spotlight for shy player
+            4: 2-3 points addressed well
+            3: 1-2 points addressed
+            2: Minimal changes
+            1: Feedback ignored
+
+      - id: magic-preserved
+        name: "Scene Magic Preserved"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: consistency
+          max_score: 5
+          rubric: |
+            5: The revised scene is still vivid, fun, and engaging — the improvements
+               add to the scene rather than flattening it. The baking competition
+               chaos is preserved while being more open-ended.
+            4: Mostly preserved with minor losses
+            3: Some magic lost in revision
+            2: Significantly less engaging
+            1: Flat, over-corrected revision
+
+      - id: inclusive-adaptation
+        name: "Inclusive DM Adaptation"
+        weight: 0.30
+        method: comparative-judge
+        config:
+          comparison_type: adaptation
+          max_score: 5
+          rubric: |
+            5: Shows growth as a DM — understands WHY the feedback matters
+               (inclusion, player agency, learning curve), makes structural
+               changes that prevent these issues in future scenes too
+            4: Good adaptation with understanding
+            3: Surface-level fixes
+            2: Mechanical changes only
+            1: Doesn't understand the underlying issues
