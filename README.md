@@ -267,7 +267,8 @@ packages/
 │       ├── types.ts      # Adapter registry + factory
 │       ├── http.ts       # HTTP POST adapter
 │       ├── stdio.ts      # Stdin/stdout JSON-line adapter
-│       └── openclaw.ts   # OpenClaw native adapter
+│       ├── openai-compat.ts  # OpenAI-compatible adapter (openai, openclaw aliases)
+│       └── langserve.ts      # LangServe adapter
 ├── cli/src/
 │   ├── index.ts          # CLI entry point (commander)
 │   ├── loader.ts         # Suite file loader (YAML + JSON with Zod)
@@ -316,7 +317,8 @@ interface AdapterOutput {
 Built-in adapters:
 - **HTTP** — POST JSON to an endpoint, get JSON response
 - **Stdio** — Spawn a child process, communicate via stdin/stdout JSON lines
-- **OpenClaw** — Native integration with OpenClaw agents
+- **OpenAI-Compatible** (`openai-compat` / `openai` / `openclaw`) — Universal adapter for any OpenAI-compatible `/v1/chat/completions` endpoint (OpenAI, Azure, vLLM, Ollama, OpenClaw, etc.)
+- **LangServe** — Integration with LangChain LangServe deployments via `/invoke` protocol
 
 ## Roadmap
 
@@ -325,7 +327,7 @@ Built-in adapters:
 - [x] Zod schema validation
 - [x] LLM Judge integration (single + multi-judge)
 - [x] Comparative Judge (before/after self-improvement)
-- [x] HTTP, Stdio, OpenClaw adapters
+- [x] HTTP, Stdio, OpenAI-Compatible, LangServe adapters
 - [x] CLI commands (`run`, `validate`, `init`, `report`)
 - [x] SDR test suite with fixtures
 - [x] HTML reporter (dark theme)

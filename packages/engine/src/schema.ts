@@ -61,7 +61,7 @@ export const ScenarioDefinitionSchema = z.object({
 // ─── Agent Config ────────────────────────────────────────────────────
 
 export const AgentConfigSchema = z.object({
-  adapter: z.enum(['http', 'stdio', 'openclaw', 'langchain']),
+  adapter: z.enum(['http', 'stdio', 'openclaw', 'openai', 'openai-compat', 'langserve', 'langchain']),
   endpoint: z.string().optional(),
   command: z.string().optional(),
   session_key: z.string().optional(),

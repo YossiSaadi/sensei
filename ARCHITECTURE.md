@@ -227,9 +227,32 @@ Spawns a child process. Communicates via JSON lines on stdin/stdout.
 
 Features: Class-level buffer, child process exit handler, sequential request handling.
 
-#### OpenClaw Adapter (`adapters/openclaw.ts`)
+#### OpenAI-Compatible Adapter (`adapters/openai-compat.ts`)
 
-Native integration with OpenClaw agents via session key.
+Universal integration with any OpenAI-compatible `/v1/chat/completions` endpoint.
+Works with OpenAI, Azure OpenAI, OpenClaw Gateway, vLLM, Ollama, LiteLLM, LocalAI, etc.
+
+```
+POST <endpoint>/v1/chat/completions
+Body: { model: "...", messages: [...], user: "<session>" }
+Response: { choices: [{ message: { content: "..." } }] }
+```
+
+Registered as: `openai-compat`, `openai`, `openclaw` (backward-compatible alias).
+
+Features: Auth via headers/env, session continuity, retry with exponential backoff, configurable model.
+
+#### LangServe Adapter (`adapters/langserve.ts`)
+
+Integration with LangChain's LangServe deployments.
+
+```
+POST <endpoint>/invoke
+Body: { input: { task: "...", previous_output: "...", feedback: "..." } }
+Response: { output: "..." } or { output: { content: "..." } }
+```
+
+Features: Supports both string and object output formats, health check via `/input_schema`, retry with backoff.
 
 ### 6. CLI (`@sensei/cli`)
 
@@ -237,7 +260,7 @@ Native integration with OpenClaw agents via session key.
 sensei run [options]
   --suite <path>           Path to suite YAML or JSON file (required)
   --target <url>           Agent endpoint URL or command (overrides suite agent config)
-  --adapter <type>         Adapter type: http, stdio, openclaw (default: http)
+  --adapter <type>         Adapter type: http, stdio, openai, openai-compat, openclaw, langserve, langchain (default: http)
   --judge-model <model>    LLM judge model (default: gpt-4o)
   --timeout <ms>           Per-scenario timeout in ms (default: 60000)
   --verbose                Show detailed execution logs
@@ -433,10 +456,11 @@ sensei/
 │   │   │   ├── reporter.ts      # JSON + terminal reporter
 │   │   │   ├── llm-client.ts    # OpenAI-compatible client factory
 │   │   │   └── adapters/
-│   │   │       ├── types.ts     # Adapter registry + createAdapter()
-│   │   │       ├── http.ts      # HTTP POST adapter
-│   │   │       ├── stdio.ts     # Stdin/stdout JSON-line adapter
-│   │   │       └── openclaw.ts  # OpenClaw native adapter
+│   │   │       ├── types.ts          # Adapter registry + createAdapter()
+│   │   │       ├── http.ts           # HTTP POST adapter
+│   │   │       ├── stdio.ts          # Stdin/stdout JSON-line adapter
+│   │   │       ├── openai-compat.ts  # OpenAI-compatible adapter (also: openai, openclaw)
+│   │   │       └── langserve.ts      # LangServe adapter
 │   │   ├── tests/               # 100+ engine tests
 │   │   ├── package.json
 │   │   └── tsconfig.json

@@ -17,7 +17,7 @@ export interface SuiteDefinition {
 }
 
 export interface AgentConfig {
-  adapter: 'http' | 'stdio' | 'openclaw' | 'langchain';
+  adapter: 'http' | 'stdio' | 'openclaw' | 'openai' | 'openai-compat' | 'langserve' | 'langchain';
   endpoint?: string;          // For HTTP adapter
   command?: string;           // For stdio adapter
   session_key?: string;       // For OpenClaw adapter

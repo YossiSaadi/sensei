@@ -3,7 +3,7 @@
  */
 import { Command } from 'commander';
 import type { SuiteDefinition, JudgeConfig, AgentConfig, SuiteResult, KPIResult } from '@sensei/engine';
-// Note: HttpAdapter, StdioAdapter, OpenClawAdapter are registered via side-effect
+// Note: HttpAdapter, StdioAdapter, OpenAICompatAdapter, LangServeAdapter are registered via side-effect
 // imports in the engine's index.ts — no need to import them directly here.
 import { Runner, Judge, Comparator, createAdapter } from '@sensei/engine';
 import { formatTerminalReport, formatHtmlReport } from '../format.js';
@@ -13,7 +13,7 @@ import { writeOutput } from '../output.js';
 export interface RunOptions {
   suite: string;
   target?: string;
-  adapter?: 'http' | 'stdio' | 'openclaw' | 'langchain';
+  adapter?: 'http' | 'stdio' | 'openclaw' | 'openai' | 'openai-compat' | 'langserve' | 'langchain';
   judgeModel?: string;
   timeout?: string;
   verbose?: boolean;
@@ -27,7 +27,7 @@ export function registerRunCommand(program: Command): void {
     .description('Run a qualification suite against an agent')
     .requiredOption('--suite <path>', 'Path to suite YAML or .ts file')
     .option('--target <url>', 'Agent endpoint URL or command')
-    .option('--adapter <type>', 'Adapter type: http, stdio, openclaw, langchain', 'http')
+    .option('--adapter <type>', 'Adapter type: http, stdio, openai, openai-compat, openclaw, langserve, langchain', 'http')
     .option('--judge-model <model>', 'LLM judge model', 'gpt-4o')
     .option('--timeout <ms>', 'Per-scenario timeout in ms', '60000')
     .action(async (opts: RunOptions) => {

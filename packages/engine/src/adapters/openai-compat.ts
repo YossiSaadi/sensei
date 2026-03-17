@@ -1,22 +1,24 @@
 /**
- * OpenClaw Adapter — Native integration with OpenClaw agents via the
- * Gateway's OpenAI-compatible /v1/chat/completions endpoint.
+ * OpenAI-Compatible Adapter — Universal integration with any agent
+ * exposing an OpenAI-compatible /v1/chat/completions endpoint.
+ *
+ * Works with: OpenAI, Azure OpenAI, OpenClaw Gateway, vLLM, Ollama,
+ * LiteLLM, LocalAI, and any OpenAI-compatible API.
  *
  * Configuration:
- *   - endpoint: Gateway base URL (default: http://127.0.0.1:18789)
+ *   - endpoint: Base URL (default: http://127.0.0.1:18789)
  *   - session_key: Optional stable session key for multi-turn scenarios
- *   - headers: { Authorization: "Bearer <token>" } or set OPENCLAW_GATEWAY_TOKEN env
+ *   - headers: { Authorization: "Bearer <token>" } or set OPENAI_API_KEY env
  *
  * The adapter sends each scenario prompt as a chat completion request and
- * extracts the assistant's response. Session continuity is maintained via
- * the OpenAI `user` field (derived from suite+run id).
+ * extracts the assistant's response.
  */
 
 import type { AgentAdapter, AgentConfig, AdapterInput, AdapterOutput } from '../types.js';
 import { registerAdapter } from './types.js';
 
-export class OpenClawAdapter implements AgentAdapter {
-  readonly name = 'openclaw';
+export class OpenAICompatAdapter implements AgentAdapter {
+  readonly name = 'openai-compat';
 
   private endpoint: string;
   private healthEndpoint: string;
@@ -24,6 +26,7 @@ export class OpenClawAdapter implements AgentAdapter {
   private maxRetries: number;
   private headers: Record<string, string>;
   private sessionUser: string;
+  private model: string;
 
   constructor(private config: AgentConfig) {
     const base = (config.endpoint ?? 'http://127.0.0.1:18789').replace(/\/$/, '');
@@ -32,10 +35,13 @@ export class OpenClawAdapter implements AgentAdapter {
     this.timeoutMs = config.timeout_ms ?? 60_000;
     this.maxRetries = 3;
 
-    // Auth: explicit header > env var
+    // Auth: explicit header > OPENCLAW_GATEWAY_TOKEN > OPENAI_API_KEY
     const token = config.headers?.['Authorization']
       ?? (process.env.OPENCLAW_GATEWAY_TOKEN
         ? `Bearer ${process.env.OPENCLAW_GATEWAY_TOKEN}`
+        : undefined)
+      ?? (process.env.OPENAI_API_KEY
+        ? `Bearer ${process.env.OPENAI_API_KEY}`
         : undefined);
 
     this.headers = {
@@ -46,15 +52,18 @@ export class OpenClawAdapter implements AgentAdapter {
 
     // Stable session user key for multi-turn (scenario chaining)
     this.sessionUser = config.session_key ?? `sensei-${Date.now()}`;
+
+    // Model name — configurable, defaults to 'default'
+    this.model = (config as unknown as Record<string, unknown>).model as string ?? 'default';
   }
 
   async connect(): Promise<void> {
-    // Validate the gateway is reachable
+    // Validate the endpoint is reachable
     const ok = await this.healthCheck();
     if (!ok) {
       throw new Error(
-        `OpenClaw Gateway not reachable at ${this.endpoint}. ` +
-        `Ensure gateway.http.endpoints.chatCompletions.enabled is true in your OpenClaw config.`,
+        `OpenAI-compatible endpoint not reachable at ${this.endpoint}. ` +
+        `Ensure the server is running and the /v1/chat/completions endpoint is enabled.`,
       );
     }
   }
@@ -63,20 +72,18 @@ export class OpenClawAdapter implements AgentAdapter {
     try {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5_000);
-      // A simple POST with empty messages will fail with 4xx, but the
-      // connection itself proves the gateway is up. We check for !5xx.
+      // A simple POST with a minimal message — any non-5xx response means the server is up
       const res = await fetch(this.endpoint, {
         method: 'POST',
         headers: this.headers,
         signal: controller.signal,
         body: JSON.stringify({
-          model: 'openclaw',
+          model: this.model,
           messages: [{ role: 'user', content: 'ping' }],
           max_tokens: 1,
         }),
       });
       clearTimeout(timer);
-      // Any non-5xx response means the gateway is up
       return res.status < 500;
     } catch {
       return false;
@@ -118,7 +125,7 @@ export class OpenClawAdapter implements AgentAdapter {
           headers: this.headers,
           signal: controller.signal,
           body: JSON.stringify({
-            model: 'openclaw',
+            model: this.model,
             messages,
             user: this.sessionUser,
           }),
@@ -127,7 +134,7 @@ export class OpenClawAdapter implements AgentAdapter {
 
         if (!res.ok) {
           const errBody = await res.text();
-          throw new Error(`OpenClaw Gateway returned HTTP ${res.status}: ${errBody}`);
+          throw new Error(`OpenAI-compatible endpoint returned HTTP ${res.status}: ${errBody}`);
         }
 
         const body = (await res.json()) as {
@@ -167,4 +174,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-registerAdapter('openclaw', (config) => new OpenClawAdapter(config));
+// Register under multiple aliases for flexibility
+registerAdapter('openai-compat', (config) => new OpenAICompatAdapter(config));
+registerAdapter('openai', (config) => new OpenAICompatAdapter(config));
+registerAdapter('openclaw', (config) => new OpenAICompatAdapter(config));

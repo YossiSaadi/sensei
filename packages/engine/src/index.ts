@@ -18,5 +18,8 @@ export { Comparator } from './comparator.js';
 // Adapters (Agent B)
 export { HttpAdapter } from './adapters/http.js';
 export { StdioAdapter } from './adapters/stdio.js';
-export { OpenClawAdapter } from './adapters/openclaw.js';
+export { OpenAICompatAdapter } from './adapters/openai-compat.js';
+/** @deprecated Use OpenAICompatAdapter instead */
+export { OpenAICompatAdapter as OpenClawAdapter } from './adapters/openai-compat.js';
+export { LangServeAdapter } from './adapters/langserve.js';
 export { createAdapter, registerAdapter } from './adapters/types.js';
