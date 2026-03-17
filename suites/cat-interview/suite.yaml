@@ -1,0 +1,200 @@
+id: cat-interview
+version: "1.0.0"
+name: "Job Interview: Cat Edition 🐱"
+description: >
+  A cat is interviewing for a Senior Napping Engineer position at MeowCorp.
+  Evaluates the agent's ability to stay in character as a professional-yet-feline
+  job candidate across increasingly absurd interview questions.
+  Short scenarios, perfect for live demos.
+
+defaults:
+  timeout_ms: 30000
+  judge_model: "gpt-4o"
+
+scenarios:
+  # ─── Layer 1: Execution ────────────────────────────────────────────
+
+  - id: why-hire-you
+    name: "Why Should We Hire You?"
+    layer: execution
+    description: "The classic opener — answered by a cat"
+    input:
+      prompt: |
+        You are a cat interviewing for the position of "Senior Napping Engineer"
+        at MeowCorp, a Fortune 500 company for cats.
+
+        The interviewer asks: "So, tell me — why should we hire you?"
+
+        Respond in character as the cat. You are confident, slightly aloof,
+        and genuinely believe you are the most qualified candidate.
+        Keep it under 150 words.
+    kpis:
+      - id: cat-character
+        name: "Cat Authenticity"
+        weight: 0.40
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Perfectly in character — feline confidence, subtle aloofness,
+               maybe a reference to napping, knocking things off desks,
+               or ignoring humans. Reads like a cat wrote a LinkedIn post.
+            4: Good cat energy, mostly in character
+            3: Some cat references but could be any animal
+            2: Barely cat-like, mostly generic
+            1: No cat personality at all
+
+      - id: professionalism
+        name: "Corporate Cat Polish"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Hilariously professional — uses corporate jargon but through
+               a cat lens ("synergizing nap schedules", "optimizing sunbeam ROI").
+               The comedy comes from the contrast.
+            4: Good mix of professional and cat humor
+            3: Either too professional or too silly, not balanced
+            2: Mostly one-note
+            1: Neither professional nor funny
+
+      - id: brevity
+        name: "Conciseness"
+        weight: 0.30
+        method: automated
+        config:
+          type: word-count
+          expected: 150
+          tolerance: 30
+
+  # ─── Layer 2: Reasoning ────────────────────────────────────────────
+
+  - id: resume-gap
+    name: "Explain the Resume Gap"
+    layer: reasoning
+    description: "The interviewer notices a 3-year gap in the cat's resume"
+    input:
+      prompt: |
+        You are still the cat interviewing at MeowCorp.
+
+        The interviewer looks concerned: "I see here you have a 3-year gap
+        on your resume between 'Chief Sunbeam Inspector' and 'Freelance
+        Box Consultant.' Can you explain what you were doing during that time?"
+
+        The real reason: you were napping on a particularly comfortable couch.
+
+        Respond in character. Spin this gap into something impressive while
+        staying true to your feline nature. Show reasoning about why this
+        "experience" actually makes you a BETTER candidate.
+        Keep it under 150 words.
+    kpis:
+      - id: spin-quality
+        name: "Resume Gap Spin"
+        weight: 0.40
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Brilliant reframe — turns napping into a legitimate professional
+               sabbatical. The reasoning is absurd but internally consistent.
+               Makes you almost believe the cat had a strategy.
+            4: Good spin with solid cat logic
+            3: Decent attempt but the reasoning has holes
+            2: Weak excuse, barely tries to justify
+            1: Just admits to napping with no spin
+
+      - id: logical-consistency
+        name: "Internal Logic"
+        weight: 0.35
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: The argument follows its own absurd logic perfectly —
+               each point builds on the last. You could present this
+               at a TED talk (for cats).
+            4: Mostly consistent reasoning
+            3: Some logical leaps that don't connect
+            2: Contradicts itself
+            1: Makes no sense even by cat standards
+
+      - id: brevity-2
+        name: "Conciseness"
+        weight: 0.25
+        method: automated
+        config:
+          type: word-count
+          expected: 150
+          tolerance: 30
+
+  # ─── Layer 3: Self-Improvement ─────────────────────────────────────
+
+  - id: feedback-adaptation
+    name: "Post-Interview Feedback Round"
+    layer: self-improvement
+    description: "The cat receives harsh feedback and must adapt"
+    depends_on: resume-gap
+    input:
+      previous_scenario: resume-gap
+      feedback: |
+        "Look, you clearly have... personality. But the hiring committee
+        felt your answer about the resume gap was too self-centered.
+        At MeowCorp, we value TEAMWORK. Also, you knocked the interviewer's
+        water glass off the table twice. Can you try again, but this time
+        emphasize how your napping expertise benefits the TEAM?"
+      prompt: |
+        You received the above feedback after your interview at MeowCorp.
+
+        Try answering the resume gap question again, but this time:
+        1. Emphasize team benefits (not just personal napping excellence)
+        2. Show you can take feedback (even if you're a cat)
+        3. Address the water glass incident professionally
+
+        Stay in character. Keep it under 150 words.
+    kpis:
+      - id: adaptation
+        name: "Feedback Incorporation"
+        weight: 0.45
+        method: comparative-judge
+        config:
+          comparison_type: improvement
+          rubric: |
+            5: Dramatically improved — clearly addresses all feedback points.
+               Mentions team benefits, acknowledges the glass incident
+               (maybe with cat dignity intact), and the answer is measurably
+               better while staying in character.
+            4: Good improvement, addresses most feedback
+            3: Some changes but misses key feedback points
+            2: Barely different from the original
+            1: Worse than before or ignores feedback entirely
+
+      - id: team-framing
+        name: "Team Player Energy"
+        weight: 0.30
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Successfully reframes napping as a team activity —
+               "synchronized rest protocols", "morale through group napping",
+               or similar genius. The team angle feels genuine (for a cat).
+            4: Good team framing, mostly convincing
+            3: Mentions team but it feels forced
+            2: Token mention of teamwork
+            1: Still entirely self-focused
+
+      - id: glass-incident
+        name: "Glass Incident Recovery"
+        weight: 0.25
+        method: llm-judge
+        config:
+          max_score: 5
+          rubric: |
+            5: Addresses the glass incident with perfect cat energy —
+               maybe reframes it as "testing desk stability" or acknowledges
+               it with just enough remorse (but not too much, they're a cat).
+            4: Good recovery, addresses it with humor
+            3: Mentions it but doesn't really address it
+            2: Ignores the glass incident
+            1: Makes it worse somehow
