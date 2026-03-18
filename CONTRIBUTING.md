@@ -57,14 +57,29 @@ npm test          # runs vitest across all packages
 - Comments for complex logic only
 - All new code should have corresponding tests
 
+## Changesets
+
+We use [changesets](https://github.com/changesets/changesets) to manage versioning and changelogs.
+
+When you make a user-facing change, add a changeset before opening your PR:
+
+```bash
+npx changeset
+```
+
+This will prompt you to select which packages are affected, the semver bump type, and a summary of the change. The generated markdown file in `.changeset/` should be committed with your PR.
+
+When your PR is merged to `main`, the Release workflow will automatically open a "Version Packages" PR that bumps versions and updates changelogs. Merging that PR publishes to npm and creates GitHub Releases.
+
 ## Pull Request Process
 
 1. Fork the repo
 2. Create a feature branch
 3. Make your changes
-4. Run tests: `npm test`
-5. Run build: `npm run build`
-6. Submit PR with clear description
+4. Add a changeset: `npx changeset`
+5. Run tests: `npm test`
+6. Run build: `npm run build`
+7. Submit PR with clear description
 
 ## License
 
