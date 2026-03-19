@@ -7,6 +7,10 @@ import { writeFileSync, mkdirSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
+const { version: CLI_VERSION } = JSON.parse(
+  readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'),
+) as { version: string };
+
 const CLI_PATH = join(__dirname, '..', 'dist', 'index.js');
 
 function runCli(args: string[]): { stdout: string; stderr: string; exitCode: number } {
@@ -43,7 +47,7 @@ describe('CLI command parsing', () => {
   it('shows version with --version', () => {
     const { stdout, exitCode } = runCli(['--version']);
     expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBe('0.0.1');
+    expect(stdout.trim()).toBe(CLI_VERSION);
   });
 
   it('shows run command help', () => {
